@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content_type" content="text/html;charset=UTF-8"/>
+<link rel="stylesheet" href="http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.css">
+<script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
+<script src="http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.js"></script>
+<style>
+.bk-cny{
+	margin: 0 0.2em 0 0;
+	font-family: "Arial";
+	color: #f60;
+	font-size: 30px;
+	line-height: 1;
+}
+.price-cny{
+	color: #f60;
+	font-size: 30px;
+	line-height: 1;
+}
+.protocol{
+	font-size: 12px;
+	line-height: 1;
+	text-decoration:none;
+}
+</style>
+<script type="text/javascript">
+//定义一个总的高度变量	
+ var totalheight = 0;   
+
+ function loaddata()
+ { 
+ 	//浏览器的高度加上滚动条的高度 
+     totalheight = parseFloat($(window).height()) + parseFloat($(window).scrollTop());
+ 	//当文档的高度小于或者等于总的高度的时候，开始动态加载数据
+ 	
+     if ($(document).height() <= totalheight)     
+     { 
+         //加载数据
+        pNo++;
+		scrollPage(null,pNo);
+     } 
+ 	
+ } 
+
+ $(window).scroll( function() { 
+	 if(hadLoad){return;}
+     loaddata();
+ }); 
+ 
+//定义上下文
+var jsCtx="http://www.doadway.com/";
+//加载公司简介;
+function loadProfile(){
+   	$.ajax({
+        type: "POST",
+        async: false,
+        url: jsCtx+"api/content/v_profile.do",
+        dataType: "json",
+        success: function(data){
+        	$("#profile").html(data.result.txt);
+        },
+        error:function(XMLHttpRequest, textStatus, errorThrown){
+       	 alert("公司简介信息加载失败~！");
+        }
+    });	 
+	
+}
+//加载首页新闻;	
+function loadNewsList(chnId){
+	   	$.ajax({
+	        type: "POST",
+	        async: false,
+	        url: jsCtx+"api/content/v_list.do",
+	        contenttype :"application/x-www-form-urlencoded;charset=utf-8", 
+	        dataType: "json",
+	        data:{channelId:chnId},
+	        success: function(data){
+	        	var newslist=data.list;
+	        	$("#newslist").empty();
+	        	for(var i=0;i<newslist.length;i++){
+		        	$("#newslist").append("<li><a href='detail.html?contentId="+newslist[i].contentId+"' data-ajax='false' data-transition='slide'><h2>"+newslist[i].title+"</h2><p>"+newslist[i].description+"</p></a></li>");
+	        	}
+	        	$('#newslist').listview('refresh');
+	        },
+	        error:function(XMLHttpRequest, textStatus, errorThrown){
+	       	 alert("新闻列表数据加载失败~！");
+	        }
+	    });	 
+}	
+
+function showLoading(){
+	$.mobile.loadingMessageTextVisible = true;
+	$.mobile.loading("show",{text:"加载中...",textVisible:true,theme:"b"} );
+	} 
+function hideLoading(){
+	$.mobile.loading( "hide" );
+	} 	
+//滚动加载数据
+var hadLoad=false;
+var pNo=1;
+function scrollPage(chnId,pgNo){
+		showLoading();
+    	//加载数据
+	   	$.ajax({
+        type: "POST",
+        async: false,
+        contenttype :"application/x-www-form-urlencoded;charset=utf-8", 
+        url: jsCtx+"api/content/v_list.do",
+        data:{channelId:chnId,pageNo:pgNo},
+        dataType: "json",
+        success: function(data){
+        	var newslist=data.list;
+        	if(pgNo>data.page.totalPage){
+        		pNo=data.page.totalPage;
+        	}
+        	if(pNo==data.page.totalPage&&!hadLoad){
+            	for(var i=0;i<newslist.length;i++){
+    	        	$("#newslist").append("<li><a href='detail.html?contentId="+newslist[i].contentId+"' data-ajax='false' data-transition='slide'><h2>"+newslist[i].title+"</h2><p>"+newslist[i].description+"</p></a></li>");
+            	}
+            	hadLoad=true;
+            	$('#newslist').listview('refresh');        		
+        	}else if(pNo<data.page.totalPage){
+            	for(var i=0;i<newslist.length;i++){
+    	        	$("#newslist").append("<li><a href='detail.html?contentId="+newslist[i].contentId+"' data-ajax='false' data-transition='slide'><h2>"+newslist[i].title+"</h2><p>"+newslist[i].description+"</p></a></li>");
+            	}
+            	hideLoading();
+            	$('#newslist').listview('refresh');           		
+        	}
+        	hideLoading();
+        },
+        error:function(XMLHttpRequest, textStatus, errorThrown){
+        hideLoading();
+       	 alert("新闻列表数据加载失败~！");
+        }
+    });		
+}
+/*
+ * 
+ 制作，首页300，二级200一张
+ 设计，首页500，二级页200一张
+logo，500一张
+7，15天不打折
+21天95折
+30天9折
+30天以上88折。
+ */
+//设计计费
+function designCharging(numbers,isHasIndex,isHasLogo){
+	var charging=0.0;
+	if(isHasLogo){
+		charging=parseFloat(charging)+parseFloat(500.0);
+	}
+	if(isHasIndex){
+		charging=parseFloat(charging)+parseFloat(500.0);
+		//二级页面计费
+		var subCharging=parseFloat((numbers-1)*200.0);
+		charging=(parseFloat(charging)+parseFloat(subCharging)).toFixed(2);
+		return charging;
+	}else{
+		//二级页面计费
+		var subCharging=parseFloat(numbers*200.0);
+		charging=(parseFloat(charging)+parseFloat(subCharging)).toFixed(2);
+		return charging;
+	}
+}
+//制作计费
+function makeCharging(numbers,isHasIndex){
+	var charging=0.0;
+	if(isHasIndex){
+		charging=parseFloat(charging)+parseFloat(300.0);
+		//二级页面计费
+		var subCharging=parseFloat((numbers-1)*200.0);
+		charging=(parseFloat(charging)+parseFloat(subCharging)).toFixed(2);
+		return charging;
+	}else{
+		//二级页面计费
+		var subCharging=parseFloat(numbers*200.0);
+		charging=subCharging;
+		return charging.toFixed(2);
+	}
+}
+//按期望时长打折计费
+function durationCharging(duration,charging){
+	if(duration==7||duration==15){
+		return parseFloat(charging).toFixed(2);
+	}else if(duration==21){
+		return parseFloat(charging*0.95).toFixed(2);
+	}else if(duration==30){
+		return parseFloat(charging*0.9).toFixed(2);
+	}else if(duration>30){
+		return parseFloat(charging*0.88).toFixed(2);
+	}
+}
+//根据用户交互操作计费动态显示
+function charging(){
+	//总费用
+	var charging=0.0;
+	//时长;
+	var duration=$("#day").val();
+	//是否需要logo;
+	var isHasLogo=$("#isHasLogo").val();
+	var hasLogo=false;
+	if(isHasLogo=='1'){
+		hasLogo=true;
+	}
+	//是否需要首页
+	var isHasIndex=$("input[name='isHasIndex']:checked").val();
+	var hasIndex=false;
+	if(isHasIndex=='1'){
+		hasIndex=true;
+	}
+	//页面数量
+	var pagaPoints=$("#points").val();
+	//服务类型的值
+	//定义一个数组  
+	var type_value =[];  
+    $('input[name="type"]:checked').each(function(){//遍历每一个名字为interest的复选框，其中选中的执行函数    
+    	type_value.push($(this).val());//将选中的值添加到数组chk_value中    
+    });
+    for(var i=0;i<type_value.length;i++){
+    	if(type_value[i]=='desgin'){
+    		charging=parseFloat(charging)+parseFloat(designCharging(pagaPoints,hasIndex,hasLogo));
+    	}else if(type_value[i]=='make'){
+	    	charging=parseFloat(charging)+parseFloat(makeCharging(pagaPoints,hasIndex));
+    	}
+    }
+    charging=durationCharging(duration,charging);
+    $("#UI_price").empty();
+    $("#UI_price").text(charging.toString());
+    
+}
+//根据应用类型返回价格
+function getPriceByAppType(app_type){
+	if(app_type=='eshop'){
+		return parseFloat(8800.00);
+	}else if(app_type=='gateway'){
+		return parseFloat(9800.00);
+	}else if(app_type=='qye'){
+		return parseFloat(6800.00);
+	}else if(app_type=='app'){
+		return parseFloat(6500.00);
+	}
+}
+//按期望时长打折计费
+function durationAppCharging(duration,charging){
+	if(duration==30||duration==45){
+		return parseFloat(charging).toFixed(2);
+	}else if(duration==60){
+		return parseFloat(charging*0.95).toFixed(2);
+	}else if(duration==90){
+		return parseFloat(charging*0.9).toFixed(2);
+	}else if(duration>90){
+		return parseFloat(charging*0.88).toFixed(2);
+	}
+}
+//根据用户交互操作计费动态显示
+function appCharging(){
+	//总费用
+	var charging=0.0;
+	//时长;
+	var duration=$("#day2").val();
+	
+	//服务类型的值
+	//定义一个数组  
+	var type_value =[];  
+    $('input[name="app_type"]:checked').each(function(){//遍历每一个名字为interest的复选框，其中选中的执行函数    
+    	type_value.push($(this).val());//将选中的值添加到数组chk_value中    
+    });
+    for(var i=0;i<type_value.length;i++){
+    	if(type_value[i]){
+    		charging=parseFloat(charging)+parseFloat(getPriceByAppType(type_value[i]));
+    	}
+    }
+    charging=durationAppCharging(duration,charging);
+    $("#dep_price").empty();
+    $("#dep_price").text(charging.toString());
+    
+}
+$(function(){  
+	loadNewsList(null);
+}); 
+</script>
+<link rel="stylesheet" href="css/jqm-datebox-1.3.0.min.css" />
+</head>
+<body onload="loadProfile();">
+<script src="./js/jqm-datebox-1.3.0.core.min.js"></script>
+<script src="./js/jqm-datebox-1.3.0.mode.datebox.min.js"></script>
+<script src="./i18n/jquery.mobile.datebox.i18n.zh-CN.utf8.js"></script>
+
+<!-- 
+<script type="text/javascript" src="http://cdn.jtsage.com/datebox/1.3.0/jqm-datebox-1.3.0.core.min.js"></script>
+<script type="text/javascript" src="http://cdn.jtsage.com/datebox/1.3.0/jqm-datebox-1.3.0.mode.datebox.min.js"></script>
+<script type="text/javascript" src="http://cdn.jtsage.com/datebox/i18n/jquery.mobile.datebox.i18n.zh-CN.utf8.js"></script>
+ -->
+<!--首页-->
+<div data-role="page" id="home">
+  <div data-role="header" data-tap-toggle="false">
+    <div data-role="navbar">
+      <ul>
+        <li><a href="#home" class="ui-btn-active" data-icon="home">首页</a></li>
+        <li><a href="#product" data-icon="grid" data-transition="slide">产品/服务</a></li>
+        <li><a href="research.html" data-ajax="false" rel="external" data-icon="search" data-transition="slide" >学院研究</a></li>
+        <li><a href="#contact_us" data-icon="info"  data-transition="slide">关于我们</a></li>
+      </ul>
+    </div>
+  </div>
+  <div data-role="content" id="newscontent">
+    <ul data-role="listview"  id="newslist">
+      <li>
+        <a href="#detail" data-transition="slide" >
+        <h2>内容标题</h2>
+        <p>新闻动态新闻动态新闻动态新闻动态新闻动态新闻动态新闻动态新闻动态新闻动态新闻动态.</p>
+        </a>
+      </li>
+      <li>
+        <a href="#detail"  data-transition="slide">
+        <h2>Mozilla Firefox</h2>
+        <p>新闻动态Firefox is a web browser from Mozilla. Released in 2004.新闻动态Firefox is a web browser from Mozilla. Released in 2004.新闻动态Firefox is a web browser from Mozilla. Released in 2004.</p>
+        </a>
+      </li>
+      <li>
+        <a href="#">
+        <h2>Google Chrome</h2>
+        <p>Google Chrome is a free, open-source web browser. Released in 2008.</p>
+        </a>
+      </li>
+      <li>
+        <a href="#">
+        <h2>Google Chrome</h2>
+        <p>Google Chrome is a free, open-source web browser. Released in 2008.</p>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div data-role="footer" data-tap-toggle="false">
+    <h1>多维矩阵工作室</h1>
+  </div>
+</div> 
+
+<!--产品/服务页-->
+<div data-role="page" id="product">
+  <div data-role="header">
+    <a href="#home" data-role="button" data-icon="home" data-transition="slide" data-direction="reverse">首页</a>
+    <h1>产品/服务</h1>
+    <a href="#home" data-role="button" data-icon="back" data-transition="slide" data-direction="reverse">返回</a>
+  </div>
+  <div data-role="content">
+    <ul data-role="listview" data-inset="true">
+      <li data-role="divider">产品列表</li>
+      <li>
+        <a href="#">
+        <img src="./images/chrome.png">
+        <h2>内容管理系统</h2>
+        <p>Google Chrome is a free, open-source web browser. Released in 2008.</p>
+        </a>
+        <a href="#download" data-rel="dialog" data-transition="pop">下载</a>
+      </li>
+    </ul>
+
+	<ul data-role="listview" data-inset="true">
+      <li data-role="divider">设计/制作服务</li>
+      <li>
+        <a href="#contact_us" data-transition="slide">
+        <img src="./images/icon.jpg">
+        <h2>UI/UE设计制作服务</h2>
+        <p>Google Chrome is a free, open-source web browser. Released in 2008.</p>
+        </a>
+      </li>
+      <li>
+        <a href="#contact_us" data-transition="slide">
+        <img src="./images/chrome.png">
+        <h2>网站/APP开发制作服务</h2>
+        <p>Google Chrome is a free, open-source web browser. Released in 2008.</p>
+        </a>
+      </li>
+    </ul>
+  </div>
+  <div data-role="footer">
+     <h1>多维矩阵工作室</h1>
+  </div>  
+</div>
+<div data-role="page" id="download">
+  <div data-role="content">
+    <a href="#" data-role="button" data-rel="back" data-icon="check" data-inline="true" data-mini="true">下载</a>
+    <a href="#" data-role="button" data-rel="back" data-inline="true" data-mini="true">取消</a>
+  </div>
+</div>
+
+
+<!--关于我们页-->
+<div data-role="page" id="about">
+  <div data-role="header">
+    <a href="#home" data-role="button" data-icon="home" data-transition="slide" data-direction="reverse">首页</a>
+    <h1>简介</h1>
+    <a href="#" data-role="button" data-icon="back" data-rel="back" data-transition="slide" data-direction="reverse">返回</a>
+    <div data-role="navbar" >
+      <ul>
+        <li><a href="#contact_us" >联系我们</a></li>
+        <li><a href="#about" data-transition="slide"  data-direction="reverse" onclick="loadProfile();">简介</a></li>
+       </ul>
+    </div>
+  </div>
+  <div data-role="content" id="profile">
+
+  </div>
+  <div data-role="footer">
+     <h1>多维矩阵工作室</h1>
+  </div>
+</div>
+
+
+<!--联系我们页-->
+<div data-role="page" id="contact_us">
+  <div data-role="header">
+    <a href="#home" data-role="button" data-icon="home" data-transition="slide" data-direction="reverse">首页</a>
+    <h1>联系我们</h1>
+    <a href="#" data-role="button" data-icon="back" data-rel="back" data-transition="slide" data-direction="reverse">返回</a>
+    <div data-role="navbar" >
+      <ul>
+        <li><a href="#contact_us" >联系我们</a></li>
+        <li><a href="#about" data-transition="slide"  data-direction="reverse" onclick="loadProfile();">简介</a></li>
+       </ul>
+    </div>
+  </div>
+  <div data-role="content">
+    <form method="post" action="#home" >
+      <div data-role="collapsible" data-collapsed="false" data-content-theme="d">
+	    <legend>UI设计/制作</legend>
+        <label for="fullname">联系人：</label>
+        <input type="text" name="fullname" id="phone">       
+        <label for="phone">手机/电话：</label>
+        <input type="text" name="phone" id="phone"> 	
+        <label for="startTime">开始时间：</label>
+        <input type="text" data-role="datebox"  data-options='{"mode":"datebox"}'  name="startTime" id="startTime">
+		<label for="day">期望时长:</label>
+        <select name="day" id="day" data-native-menu="false" onchange="charging();">
+         <option value="7">7天</option>
+         <option value="15">15天</option>
+         <option value="21">21天</option>
+         <option value="30">30天</option>
+         <option value="31">30天以上</option>
+        </select>
+        <label for="email">邮箱：</label>
+        <input type="email" name="email" id="email" placeholder="您的邮箱地址..">
+
+      <fieldset data-role="controlgroup" data-type="horizontal">
+        <legend>服务类型：</legend>
+          <label for="make">制作</label>
+          <input type="checkbox" name="type" onchange="charging();" id="make" checked="checked" value="make">
+          <label for="desgin">设计</label>
+          <input type="checkbox" name="type" onchange="charging();" id="desgin" value="desgin">
+      </fieldset>
+
+        <label for="isHasLogo">是否需要logo：</label>
+        <select name="isHasLogo" id="isHasLogo" data-role="slider" onchange="charging();">
+          <option value="0">Off</option>
+          <option value="1">On</option>
+        </select>
+        
+        
+      <fieldset data-role="controlgroup" data-type="horizontal">
+        <legend>主颜色：</legend>
+          <label for="red">红</label>
+          <input type="checkbox" name="favcolor" id="red" value="red">
+          <label for="green">绿</label>
+          <input type="checkbox" name="favcolor" id="green" value="green">
+          <label for="blue">蓝</label>
+          <input type="checkbox" name="favcolor" id="blue" value="blue">	
+      </fieldset>
+
+      <fieldset data-role="controlgroup"  data-type="horizontal">
+        <legend>是否需要首页：</legend>
+          <label for="sayYes">是</label>
+          <input type="radio" name="isHasIndex" onchange="charging();" checked="checked" id="sayYes" value="1">
+          <label for="sayNo">否</label>
+          <input type="radio" name="isHasIndex" onchange="charging();" id="sayNo" value="0">
+      </fieldset>
+      
+        <label for="points">页面数量:</label>
+        <input type="range" name="points" onchange="charging();" id="points" value="1" min="1" max="50">
+        
+		<label for="points">价格:</label>
+		<label><span class="bk-cny">¥</span><span class="price-cny" id="UI_price">300.00</span></label>
+        <label for="protocol"><a href="#" class="protocol">《UI设计制作服务协议》</a></label>
+        <input type="checkbox" name="protocol" id="protocol" value="1">
+        
+     <div data-role="controlgroup" data-type="horizontal" align="center">
+      <input type="submit"  value="立即购买">
+      <input type="reset"  value="重置">
+     </div>
+	</div>
+    </form>
+
+    <form method="post" action="#home" >
+      <div data-role="collapsible" data-content-theme="d">
+	    <legend>网站/APP制作</legend>
+        <label for="fullname">联系人：</label>
+        <input type="text" name="fullname" id="phone">       
+        <label for="phone">手机/电话：</label>
+        <input type="text" name="phone" id="phone"> 	
+        <label for="startTime">开始时间：</label>
+        <input type="text"   data-role="datebox"  data-options='{"mode":"datebox"}' name="startTime" id="startTime">
+		<label for="day2">期望时长:</label>
+        <select name="day2" id="day2" data-native-menu="false" onchange="appCharging();">
+         <option value="30">1个月</option>
+         <option value="45">1个半月</option>
+         <option value="60">2个月</option>
+         <option value="90">3个月</option>
+         <option value="91">3个月以上</option>
+        </select>
+        <label for="email">邮箱：</label>
+        <input type="email" name="email" id="email" placeholder="您的邮箱地址..">
+
+      <fieldset data-role="controlgroup" data-type="horizontal">
+        <legend>应用类型：</legend>
+          <label for="eshop">电商</label>
+          <input type="radio" data-mini="true" name="app_type" id="eshop" value="eshop" onchange="appCharging();">
+          <label for="gateway">门户</label>
+          <input type="radio" data-mini="true" name="app_type" id="gateway" value="gateway" onchange="appCharging();">
+          <label for="qye">企业</label>
+          <input type="radio" data-mini="true" name="app_type" id="qye" value="qye" onchange="appCharging();">
+          <label for="app">Android客户端</label>
+          <input type="radio" data-mini="true" name="app_type" id="app" value="app" onchange="appCharging();">
+      </fieldset>
+
+       
+		<label for="points">价格:</label>
+		<label><span class="bk-cny">¥</span><span class="price-cny" id="dep_price">0.00</span></label>
+        <label for="protocol2"><a href="#" class="protocol">《网站/APP开发制作服务协议》</a></label>
+        <input type="checkbox" name="protocol2" id="protocol2" value="1">      
+     <div data-role="controlgroup" data-type="horizontal" align="center">
+      <input type="submit"  value="立即购买">
+      <input type="reset"  value="重置">
+     </div>
+	</div>
+    </form>
+
+
+  </div>
+  <div data-role="footer">
+     <h1>多维矩阵工作室</h1>
+  </div>
+</div>
+
+</body>
+</html>

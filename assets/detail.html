@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content_type" content="text/html;charset=UTF-8"/>
+<link rel="stylesheet" href="http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.css">
+<script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+<script src="http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.js"></script>
+<script type="text/javascript">
+function GetRequest() {
+   var url = location.search; //获取url中"?"符后的字串
+   var theRequest = new Object();
+   if (url.indexOf("?") != -1) { 
+      var str = url.substr(1);
+      strs = str.split("&");
+      for(var i = 0; i < strs.length; i ++) { 
+         theRequest[strs[i].split("=")[0]]=unescape(strs[i].split("=")[1]);
+      }
+   }
+   return theRequest;
+}
+//定义上下文
+var jsCtx="http://www.doadway.com/";
+//显示内容;	
+function loadDetail(contentId){
+	   	$.ajax({
+	        type: "POST",
+	        async: false,
+	        contenttype :"application/x-www-form-urlencoded;charset=utf-8", 
+	        url: jsCtx+"api/content/v_content.do",
+	        dataType: "json",
+	        data:{contentId:contentId},
+	        success: function(data){
+	        	data=eval(data);
+	        	$("#detail_title").empty();
+	        	$("#detail_title").html(data.result.title);
+	        	$("#detail_content").empty();
+	        	$("#detail_content").html(data.result.txt);
+	        },
+	        error:function(XMLHttpRequest, textStatus, errorThrown){
+	       	 	alert("内容数据加载失败~！");
+	        }
+	    });	 
+}
+
+var Request = new Object();
+Request = GetRequest();
+
+var sUrl="http://service.weibo.com/share/share.php?appkey=&url=";
+var tUrl="http://v.t.qq.com/share/share.php?url=";
+var href=window.location.href;
+$(function(){  
+	var cId=Request['contentId'];
+	loadDetail(cId);
+	$("#sBtn").attr("href",sUrl+href);
+	$("#tBtn").attr("href",tUrl+href);
+});	
+</script>
+</head>
+<body>
+<!--内容详情页-->
+<div data-role="page" id="detail">
+  <div data-role="header">
+    <a href="index.html#home" data-ajax="false"  data-role="button" data-icon="home" data-transition="slide" data-direction="reverse">首页</a>
+    <h1 id="detail_title">标题</h1>
+    <a href="#home" data-role="button" data-icon="back" data-rel="back" data-transition="slide" data-direction="reverse">返回</a>
+  </div>
+  <div data-role="content" id="detail_content">
+       <p>这些按钮仅供演示，无任何效果。这些按钮仅供演示，无任何效果。这些按钮仅供演示，无任何效果。这些按钮仅供演示，无任何效果。这些按钮仅供演示，无任何效果。这些按钮仅供演示，无任何效果。这些按钮仅供演示，无任何效果。</p>
+       <p>这些按钮仅供演示，无任何效果。</p>
+       <p>这些按钮仅供演示，无任何效果。</p>
+       <p>这些按钮仅供演示，无任何效果。</p>
+       <p>这些按钮仅供演示，无任何效果。</p>
+       <p>这些按钮仅供演示，无任何效果。</p>
+  </div>
+  <div data-role="footer" class="ui-btn">
+    <div >
+      <a href="#" target="_blank" id="sBtn"  title="分享到新浪微博" data-role="button" data-icon="plus" data-inline="true">分享到新浪微博</a>
+      <a href="#" target="_blank" id="tBtn"  title="分享到腾讯微博" data-role="button" data-icon="plus" data-inline="true">分享到腾讯微博</a>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
